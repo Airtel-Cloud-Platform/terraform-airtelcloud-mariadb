@@ -71,6 +71,22 @@ variable "password" {
     )
     error_message = "password must contain uppercase, lowercase, digit, and special characters."
   }
+
+  validation {
+    condition     = !strcontains(var.password, "@") && !strcontains(var.password, "_")
+    error_message = "password cannot contain '@' or '_'."
+  }
+
+  validation {
+    condition = alltrue([
+      for word in concat(
+        [var.cluster_name, var.mariadb_username],
+        regexall("[A-Za-z0-9]+", var.cluster_name),
+        regexall("[A-Za-z0-9]+", var.mariadb_username)
+      ) : length(word) < 3 || !strcontains(lower(var.password), lower(word))
+    ])
+    error_message = "password cannot contain words from mariadb_username or cluster_name."
+  }
 }
 
 variable "is_superuser" {
@@ -98,8 +114,8 @@ variable "storage_size" {
   type        = number
 
   validation {
-    condition     = var.storage_size >= 200
-    error_message = "storage_size must be at least 200 GB."
+    condition     = var.storage_size >= 200 && floor(var.storage_size) == var.storage_size
+    error_message = "storage_size must be a whole number of at least 200 GB."
   }
 }
 
@@ -141,8 +157,8 @@ variable "num_replicas" {
   default     = 0
 
   validation {
-    condition     = var.num_replicas >= 0 && var.num_replicas <= 10
-    error_message = "num_replicas must be between 0 and 10."
+    condition     = var.num_replicas >= 0 && var.num_replicas <= 10 && floor(var.num_replicas) == var.num_replicas
+    error_message = "num_replicas must be a whole number between 0 and 10."
   }
 
   validation {
@@ -161,23 +177,49 @@ variable "labels" {
   default     = null
 }
 
-variable "security_group" {
-  description = "Allowed client CIDRs. Forces a new resource."
-
-  type = object({
-    allowed_ips = list(string)
-  })
+variable "vpc" {
+  description = "VPC name used to resolve the subnet. Set together with subnet."
+  type        = string
+  default     = null
 
   validation {
-    condition     = length(var.security_group.allowed_ips) > 0
-    error_message = "security_group.allowed_ips must contain at least one CIDR."
+    condition     = var.vpc == null || length(trim(var.vpc, " ")) > 0
+    error_message = "vpc cannot be empty when set."
+  }
+}
+
+variable "subnet" {
+  description = "Subnet name within the VPC. Set together with vpc."
+  type        = string
+  default     = null
+
+  validation {
+    condition     = var.subnet == null || length(trim(var.subnet, " ")) > 0
+    error_message = "subnet cannot be empty when set."
+  }
+}
+
+variable "custom_cidr" {
+  description = "Custom client CIDRs. Required unless both vpc and subnet are set; can be combined with them."
+  type        = list(string)
+  default     = null
+
+  validation {
+    condition = var.custom_cidr == null || alltrue([
+      for cidr in var.custom_cidr : length(trim(cidr, " ")) > 0
+    ])
+    error_message = "custom_cidr cannot contain empty values."
   }
 
   validation {
-    condition = alltrue([
-      for ip in var.security_group.allowed_ips : length(trim(ip, " ")) > 0
-    ])
-    error_message = "security_group.allowed_ips cannot contain empty values."
+    condition = (
+      (var.vpc == null) == (var.subnet == null) &&
+      (
+        (var.custom_cidr != null && length(var.custom_cidr) > 0) ||
+        (var.vpc != null && var.subnet != null)
+      )
+    )
+    error_message = "Set custom_cidr, both vpc and subnet, or all three."
   }
 }
 
@@ -201,10 +243,12 @@ variable "backup" {
       !try(var.backup.enabled, false) ||
       (
         try(var.backup.schedule_time, null) != null &&
-        try(var.backup.schedule_day, null) != null
+        try(var.backup.schedule_day, null) != null &&
+        try(var.backup.retention, null) != null &&
+        try(var.backup.retention, 0) >= 1
       )
     )
-    error_message = "schedule_time and schedule_day are required when backup.enabled is true."
+    error_message = "schedule_time, schedule_day, and retention (at least 1 day) are required when backup.enabled is true."
   }
 
   validation {
@@ -226,6 +270,26 @@ variable "backup" {
       )
     )
     error_message = "backup.schedule_day must be Monday through Sunday."
+  }
+
+  validation {
+    condition = (
+      var.backup == null ||
+      try(var.backup.retention, null) == null ||
+      (
+        var.backup.retention >= 1 &&
+        floor(var.backup.retention) == var.backup.retention
+      )
+    )
+    error_message = "backup.retention must be a whole number of at least 1 day when set."
+  }
+
+  validation {
+    condition = (
+      var.backup == null ||
+      floor(try(var.backup.compression_level, 1)) == try(var.backup.compression_level, 1)
+    )
+    error_message = "backup.compression_level must be a whole number."
   }
 }
 

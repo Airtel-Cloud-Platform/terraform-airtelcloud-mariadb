@@ -6,6 +6,7 @@ This example provisions a highly available MariaDB cluster using most module fea
 
 - High availability with a slave replica
 - Backup schedule and protection plan
+- VPC/subnet resolution with additional custom CIDRs
 - Labels
 - Resource timeouts
 

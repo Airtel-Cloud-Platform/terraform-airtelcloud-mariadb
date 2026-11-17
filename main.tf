@@ -13,11 +13,11 @@ resource "airtelcloud_mariadb" "this" {
   is_superuser      = var.is_superuser
   network_type      = var.network_type
   storage_type      = var.storage_type
+  vpc               = var.vpc
+  subnet            = var.subnet
+  custom_cidr       = var.custom_cidr
   labels            = var.labels
-  security_group = {
-    allowed_ips = var.security_group.allowed_ips
-  }
-  backup = var.backup
+  backup            = var.backup
 
   dynamic "timeouts" {
     for_each = var.timeouts == null ? [] : [var.timeouts]
