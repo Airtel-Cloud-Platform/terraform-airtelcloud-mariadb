@@ -2,7 +2,7 @@ terraform {
   required_providers {
     airtelcloud = {
       source  = "Airtel-Cloud-Platform/airtelcloud"
-      version = ">= 1.2.8"
+      version = ">= 2.0.0"
     }
   }
 }
@@ -35,13 +35,14 @@ module "mariadb" {
   backup = {
     enabled         = true
     protection_plan = "weekly-full-daily-incr"
+    retention       = 15
     schedule_time   = "02:00"
     schedule_day    = "Monday"
   }
 
-  security_group = {
-    allowed_ips = ["192.168.1.0/24"]
-  }
+  vpc         = "app-vpc"
+  subnet      = "app-subnet"
+  custom_cidr = ["192.168.1.0/24"]
 
   timeouts = {
     create = "45m"

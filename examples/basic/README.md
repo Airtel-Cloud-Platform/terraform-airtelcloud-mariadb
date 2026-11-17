@@ -6,7 +6,7 @@ This example provisions a standalone MariaDB cluster using the module from the r
 
 - Single cluster creation
 - Required credentials, flavor, storage, and zone
-- Security group CIDR allow list
+- Custom CIDR client access
 - Minimal optional inputs
 
 ## Files

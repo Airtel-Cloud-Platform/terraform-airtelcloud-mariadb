@@ -23,6 +23,11 @@ output "mariadb_username" {
   value       = airtelcloud_mariadb.this.mariadb_username
 }
 
+output "users" {
+  description = "Admin username returned by the API."
+  value       = airtelcloud_mariadb.this.users
+}
+
 output "status" {
   description = "Current cluster status."
   value       = airtelcloud_mariadb.this.status
@@ -59,22 +64,35 @@ output "connection_string" {
   sensitive   = true
 }
 
+output "backup_schedule_time" {
+  description = "Configured backup schedule time."
+  value       = try(airtelcloud_mariadb.this.backup.schedule_time, null)
+}
+
+output "backup_schedule_day" {
+  description = "Configured backup schedule day."
+  value       = try(airtelcloud_mariadb.this.backup.schedule_day, null)
+}
+
 output "mariadb" {
   description = "Selected cluster attributes for downstream modules."
   sensitive   = true
 
   value = {
-    id                = airtelcloud_mariadb.this.id
-    cluster_name      = airtelcloud_mariadb.this.cluster_name
-    version           = airtelcloud_mariadb.this.version
-    database_name     = airtelcloud_mariadb.this.database_name
-    mariadb_username  = airtelcloud_mariadb.this.mariadb_username
-    status            = airtelcloud_mariadb.this.status
-    topology          = airtelcloud_mariadb.this.topology
-    num_replicas      = airtelcloud_mariadb.this.num_replicas
-    availability_zone = airtelcloud_mariadb.this.availability_zone
-    port              = airtelcloud_mariadb.this.port
-    created_at        = airtelcloud_mariadb.this.created_at
-    connection_string = airtelcloud_mariadb.this.connection_string
+    id                   = airtelcloud_mariadb.this.id
+    cluster_name         = airtelcloud_mariadb.this.cluster_name
+    version              = airtelcloud_mariadb.this.version
+    database_name        = airtelcloud_mariadb.this.database_name
+    mariadb_username     = airtelcloud_mariadb.this.mariadb_username
+    users                = airtelcloud_mariadb.this.users
+    status               = airtelcloud_mariadb.this.status
+    topology             = airtelcloud_mariadb.this.topology
+    num_replicas         = airtelcloud_mariadb.this.num_replicas
+    availability_zone    = airtelcloud_mariadb.this.availability_zone
+    port                 = airtelcloud_mariadb.this.port
+    created_at           = airtelcloud_mariadb.this.created_at
+    connection_string    = airtelcloud_mariadb.this.connection_string
+    backup_schedule_time = try(airtelcloud_mariadb.this.backup.schedule_time, null)
+    backup_schedule_day  = try(airtelcloud_mariadb.this.backup.schedule_day, null)
   }
 }
